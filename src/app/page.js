@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useRef, useEffect } from "react";
 
 // Simple markdown renderer component
@@ -132,25 +134,23 @@ export default function Home() {
               {/* Hidden checkbox */}
               <input
                 type="checkbox"
+                className="sr-only peer"
                 checked={persona === "piyushSir"}
-                onChange={() =>
+                onChange={() => {
                   setPersona((prev) =>
                     prev === "hiteshSir" ? "piyushSir" : "hiteshSir"
-                  )
-                }
-                className="sr-only"
+                  );
+                  setConversation([]); // Clear chat history
+                  setMessage(""); // Clear input
+                }}
               />
               {/* Track */}
               <div className="w-12 h-6 bg-gray-300 rounded-full shadow-inner transition-colors duration-300 peer-checked:bg-blue-500"></div>
               {/* Thumb */}
-              <div
-                className={`absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-                  persona === "piyushSir" ? "translate-x-6" : ""
-                }`}
-              ></div>
+              <div className="absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-6"></div>
             </div>
             {/* Label text */}
-            <span className="ml-3 text-gray-700">
+            <span className="ml-3 text-[#c15f3c]">
               {persona === "hiteshSir" ? "Hitesh Sir" : "Piyush Sir"}
             </span>
           </label>
@@ -200,19 +200,17 @@ export default function Home() {
                   <div className="flex items-start space-x-3 max-w-[80%]">
                     {msg.role === "assistant" && (
                       <div className="w-8 h-8 bg-[#c15f3c]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        <svg
-                          className="w-4 h-4 text-[#c15f3c]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                          />
-                        </svg>
+                        {persona === "hiteshSir" ? (
+                          <Avatar>
+                            <AvatarImage src="https://avatars.githubusercontent.com/u/11613311?v=4" />
+                            <AvatarFallback>CN</AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <Avatar>
+                            <AvatarImage src="https://avatars.githubusercontent.com/u/44976328?v=4" />
+                            <AvatarFallback>CN</AvatarFallback>
+                          </Avatar>
+                        )}
                       </div>
                     )}
 
@@ -358,6 +356,24 @@ export default function Home() {
           <p className="text-xs text-[#b1ada1] mt-2 text-center">
             Press Enter to send • Shift + Enter for new line
           </p>
+          <div className="text-xs text-[#b1ada1] mt-2 text-center">
+            Links:{" "}
+            <Link
+              className="p-2"
+              href="https://github.com/adityathakur17/persona-ai/tree/main"
+            >
+              Github
+            </Link>
+            <Link
+              className="p-2"
+              href="https://hashnode.com/689b81aa81efa11f5051e59f/dashboard"
+            >
+              Hashnode
+            </Link>
+            <Link href="https://www.linkedin.com/in/aditya-thakur-267991229/">
+              LinkedIn
+            </Link>
+          </div>
         </div>
       </div>
     </div>
