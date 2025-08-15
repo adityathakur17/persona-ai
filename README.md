@@ -35,5 +35,3 @@ cd persona-ai
 npm install
 npm run dev
 
-git clone https://github.com/<your-username>/persona-ai.git
-cd persona-ai
