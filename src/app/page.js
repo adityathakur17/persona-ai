@@ -151,7 +151,7 @@ export default function Home() {
             </div>
             {/* Label text */}
             <span className="ml-3 text-[#c15f3c]">
-              {persona === "hiteshSir" ? "Hitesh Sir" : "Piyush Sir"}
+              {persona === "hiteshSir" ? "Hitesh Choudhary" : "Piyush Garg"}
             </span>
           </label>
 
