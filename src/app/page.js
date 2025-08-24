@@ -79,7 +79,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-black mb-6">Talk to your mentors</h2>
           <p className="text-xl text-gray-600 mb-8">
-            Ask them any doubts. Many people have tried it, now it's your turn.
+            Ask them any doubts. Many people have tried it, now it&apos;s your turn.
           </p>
 
           <div className="grid md:grid-cols-3 gap-8 mt-12">
