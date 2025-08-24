@@ -1,421 +1,149 @@
-"use client";
-import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState, useRef, useEffect } from "react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Github, Twitter, Linkedin, Instagram } from "lucide-react"
+import Link from "next/link"
 
-// Simple markdown renderer component
-const MarkdownRenderer = ({ content, isUser }) => {
-  const renderContent = (text) => {
-    // Handle code blocks first (```code```)
-    const parts = text.split(/(```[\s\S]*?```)/);
-
-    return parts.map((part, index) => {
-      if (part.startsWith("```") && part.endsWith("```")) {
-        const code = part.slice(3, -3).trim();
-        return (
-          <pre
-            key={index}
-            className={`p-4 rounded-lg mt-3 mb-3 overflow-x-auto ${
-              isUser
-                ? "bg-[#a04d2a]"
-                : "bg-[#f4f3ee] border border-[#b1ada1]/20"
-            }`}
-          >
-            <code
-              className={`text-sm font-mono ${
-                isUser ? "text-white" : "text-[#c15f3c]"
-              }`}
-            >
-              {code}
-            </code>
-          </pre>
-        );
-      }
-
-      // Handle inline code (`code`)
-      part = part.replace(/`([^`]+)`/g, (match, code) => {
-        return `<code class="px-2 py-1 rounded text-sm font-mono ${
-          isUser
-            ? "bg-[#a04d2a] text-white"
-            : "bg-[#f4f3ee] text-[#c15f3c] border border-[#b1ada1]/20"
-        }">${code}</code>`;
-      });
-
-      // Handle bold (**text** or __text__)
-      part = part.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      part = part.replace(/__(.*?)__/g, "<strong>$1</strong>");
-
-      // Handle italic (*text* or _text_)
-      part = part.replace(/\*(.*?)\*/g, "<em>$1</em>");
-      part = part.replace(/_(.*?)_/g, "<em>$1</em>");
-
-      // Handle line breaks
-      part = part.replace(/\n/g, "<br />");
-
-      return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-    });
-  };
-
-  return <>{renderContent(content)}</>;
-};
-
-export default function Home() {
-  const [message, setMessage] = useState("");
-  const [persona, setPersona] = useState("hiteshSir");
-  const [loading, setLoading] = useState(false);
-  const [conversation, setConversation] = useState([]);
-  const [isRateLimited, setIsRateLimited] = useState(false);
-  const [resetTimer, setResetTimer] = useState(0);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [conversation]);
-
-  const handleChat = async () => {
-    if (!message.trim()) return;
-
-    setLoading(true);
-
-    // Add user message to conversation
-    const userMessage = { role: "user", content: message };
-    setConversation((prev) => [...prev, userMessage]);
-
-    // Clear input
-    setMessage("");
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message, persona }),
-      });
-
-      if (res.status === 429) {
-        const { error, resetInSeconds } = await res.json(); // if backend provides resetInSeconds
-        toast.error(error);
-
-        setIsRateLimited(true);
-        setResetTimer(resetInSeconds || 60); // fallback to 60s
-        setLoading(false);
-        return;
-      }
-
-      if (!res.ok) {
-        throw new Error("Something went wrong");
-      }
-
-      const data = await res.json();
-
-      // Add AI response to conversation
-      const aiMessage = { role: "assistant", content: data.response };
-      setConversation((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      const errorMessage = {
-        role: "assistant",
-        content: "ERROR: " + error.message,
-      };
-      setConversation((prev) => [...prev, errorMessage]);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (resetTimer <= 0) return;
-    const interval = setInterval(() => {
-      setResetTimer((t) => t - 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [resetTimer]);
-
-  useEffect(() => {
-    if (resetTimer === 0 && isRateLimited) {
-      setIsRateLimited(false);
-    }
-  }, [resetTimer, isRateLimited]);
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleChat();
-    }
-  };
-
-  const clearConversation = () => {
-    setConversation([]);
-  };
-
+export default function HomePage() {
   return (
-    <div className="font-sans flex flex-col min-h-screen bg-[#f4f3ee]">
-      {/* Header */}
-      <div className="bg-white border-b border-[#b1ada1]/20 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-light text-[#c15f3c]">Persona AI</h1>
-          <label className="flex items-center cursor-pointer">
-            {/* Toggle container */}
-            <div className="relative">
-              {/* Hidden checkbox */}
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={persona === "piyushSir"}
-                onChange={() => {
-                  setPersona((prev) =>
-                    prev === "hiteshSir" ? "piyushSir" : "hiteshSir"
-                  );
-                  setConversation([]); // Clear chat history
-                  setMessage(""); // Clear input
-                }}
-              />
-              {/* Track */}
-              <div className="w-12 h-6 bg-gray-300 rounded-full shadow-inner transition-colors duration-300 peer-checked:bg-blue-500"></div>
-              {/* Thumb */}
-              <div className="absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-6"></div>
+    <div className="min-h-screen bg-white">
+      {/* Navbar */}
+      <nav className="border-b border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-black">Persona AI</h1>
             </div>
-            {/* Label text */}
-            <span className="ml-3 text-[#c15f3c]">
-              {persona === "hiteshSir" ? "Hitesh Choudhary" : "Piyush Garg"}
-            </span>
-          </label>
-
-          <button
-            onClick={clearConversation}
-            className="px-4 py-2 text-sm text-[#b1ada1] hover:text-[#c15f3c] transition-colors duration-200"
-          >
-            Clear Chat
-          </button>
-        </div>
-      </div>
-
-      {/* Chat Messages Container */}
-      <div className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="max-w-4xl mx-auto">
-          {conversation.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 bg-[#c15f3c]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-[#c15f3c]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-4">
+                <a href="#features" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium">
+                  Features
+                </a>
+                <a href="#about" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium">
+                  About
+                </a>
+                <a href="#contact" className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium">
+                  Contact
+                </a>
               </div>
-              <p className="text-[#b1ada1] text-lg font-light">
-                Start a conversation
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-black mb-6">Persona AI</h1>
+          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">Now your mentors are just a click away!</p>
+
+          {/* Mentor Cards */}
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto" id="about">
+            {/* Hitesh Choudhary Card */}
+            <Card className="border-2 border-gray-200 hover:border-black transition-colors">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-black mb-4">Hitesh Choudhary</h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  A passionate educator and full-stack developer with expertise in JavaScript, React, Node.js, and
+                  modern web technologies. Known for his clear teaching style and practical approach to coding, Hitesh
+                  has helped thousands of developers master web development through his comprehensive courses and
+                  tutorials.
+                </p>
+                <Link href="/chat">  
+                <Button className="w-full bg-black text-white hover:bg-gray-800">Talk now</Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Piyush Garg Card */}
+            <Card className="border-2 border-gray-200 hover:border-black transition-colors">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-black mb-4">Piyush Garg</h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  An experienced software engineer and tech entrepreneur specializing in system design, backend
+                  development, and DevOps. Piyush is known for his deep technical knowledge and ability to explain
+                  complex concepts in simple terms, making him an excellent mentor for aspiring developers and
+                  engineers.
+                </p>
+                <Link href="/chat">
+                
+                <Button className="w-full bg-black text-white hover:bg-gray-800">Talk now</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50" id="features">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-black mb-6">Talk to your mentors</h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Ask them any doubts. Many people have tried it, now it's your turn.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8 mt-12">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl font-bold">💬</span>
+              </div>
+              <h3 className="text-xl font-semibold text-black mb-2">Interactive Conversations</h3>
+              <p className="text-gray-600">
+                Have real-time conversations with AI mentors who understand your learning style.
               </p>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {conversation.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div className="flex items-start space-x-3 max-w-[80%]">
-                    {msg.role === "assistant" && (
-                      <div className="w-8 h-8 bg-[#c15f3c]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        {persona === "hiteshSir" ? (
-                          <Avatar>
-                            <AvatarImage src="https://avatars.githubusercontent.com/u/11613311?v=4" />
-                            <AvatarFallback>CN</AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <Avatar>
-                            <AvatarImage src="https://avatars.githubusercontent.com/u/44976328?v=4" />
-                            <AvatarFallback>CN</AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    )}
 
-                    <div
-                      className={`p-4 rounded-2xl ${
-                        msg.role === "user"
-                          ? "bg-[#c15f3c] text-white rounded-br-md"
-                          : "bg-white text-gray-800 rounded-bl-md border border-[#b1ada1]/10"
-                      }`}
-                    >
-                      <div className="whitespace-pre-wrap leading-relaxed">
-                        <MarkdownRenderer
-                          content={msg.content}
-                          isUser={msg.role === "user"}
-                        />
-                      </div>
-                    </div>
-
-                    {msg.role === "user" && (
-                      <div className="w-8 h-8 bg-[#c15f3c] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {/* Loading indicator */}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="flex items-start space-x-3 max-w-[80%]">
-                    <div className="w-8 h-8 bg-[#c15f3c]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <svg
-                        className="w-4 h-4 text-[#c15f3c]"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="bg-white border border-[#b1ada1]/10 rounded-2xl rounded-bl-md p-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-[#b1ada1] rounded-full animate-bounce"></div>
-                          <div
-                            className="w-2 h-2 bg-[#b1ada1] rounded-full animate-bounce"
-                            style={{ animationDelay: "0.1s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-[#b1ada1] rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-[#b1ada1] ml-2">
-                          Thinking...
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
+            <div className="text-center">
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl font-bold">🎯</span>
+              </div>
+              <h3 className="text-xl font-semibold text-black mb-2">Personalized Guidance</h3>
+              <p className="text-gray-600">
+                Get tailored advice and solutions based on your specific questions and goals.
+              </p>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-[#b1ada1]/20 px-6 py-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-end space-x-4">
-            <div className="flex-1">
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={
-                  isRateLimited
-                    ? `Wait ${resetTimer}s to send`
-                    : "Type your message..."
-                }
-                rows={1}
-                className="w-full p-4 border border-[#b1ada1]/20 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-[#c15f3c]/20 focus:border-[#c15f3c]/30 transition-all duration-200 text-gray-800 placeholder-[#b1ada1]"
-                disabled={loading || isRateLimited}
-                style={{
-                  minHeight: "56px",
-                  maxHeight: "120px",
-                  overflowY: message
-                    ? message.split("\n").length > 2
-                      ? "auto"
-                      : "hidden"
-                    : "hidden",
-                }}
-              />
+            <div className="text-center">
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl font-bold">⚡</span>
+              </div>
+              <h3 className="text-xl font-semibold text-black mb-2">Instant Responses</h3>
+              <p className="text-gray-600">
+                No waiting time - get immediate answers to your coding and career questions.
+              </p>
             </div>
-            <button
-              onClick={handleChat}
-              disabled={loading || !message.trim()}
-              className="w-12 h-12 bg-[#c15f3c] text-white rounded-full hover:bg-[#a04d2a] disabled:bg-[#b1ada1] disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center flex-shrink-0"
-            >
-              {loading ? (
-                <svg
-                  className="w-5 h-5 animate-spin"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-          <p className="text-xs text-[#b1ada1] mt-2 text-center">
-            Press Enter to send • Shift + Enter for new line
-          </p>
-          <div className="text-xs text-[#b1ada1] mt-2 text-center">
-            Links:{" "}
-            <Link
-              className="p-2"
-              href="https://github.com/adityathakur17/persona-ai/tree/main"
-            >
-              Github
-            </Link>
-            <Link
-              className="p-2"
-              href="https://hashnode.com/689b81aa81efa11f5051e59f/dashboard"
-            >
-              Hashnode
-            </Link>
-            <Link href="https://www.linkedin.com/in/aditya-thakur-267991229/">
-              LinkedIn
-            </Link>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-black text-white py-12" id="contact">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-6">Persona AI</h3>
+            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+              Connect with AI mentors and accelerate your learning journey.
+            </p>
+
+            {/* Social Media Links */}
+            <div className="flex justify-center space-x-6 mb-8">
+              <a href="https://x.com/adxtya_thakur" className="text-gray-400 hover:text-white transition-colors">
+                <Twitter className="w-6 h-6" />
+              </a>
+              <a href="https://github.com/adityathakur17/persona-ai/tree/main" className="text-gray-400 hover:text-white transition-colors">
+                <Github className="w-6 h-6" />
+              </a>
+              <a href="https://www.linkedin.com/in/aditya-thakur-267991229/" className="text-gray-400 hover:text-white transition-colors">
+                <Linkedin className="w-6 h-6" />
+              </a>
+            </div>
+
+            <div className="border-t border-gray-800 pt-8">
+              <p className="text-gray-400 text-sm">© 2025 Persona AI. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
-  );
+  )
 }
