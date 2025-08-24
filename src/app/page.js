@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 
 // Simple markdown renderer component
 const MarkdownRenderer = ({ content, isUser }) => {
@@ -64,6 +65,8 @@ export default function Home() {
   const [persona, setPersona] = useState("hiteshSir");
   const [loading, setLoading] = useState(false);
   const [conversation, setConversation] = useState([]);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [resetTimer, setResetTimer] = useState(0);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -95,6 +98,20 @@ export default function Home() {
         body: JSON.stringify({ message, persona }),
       });
 
+      if (res.status === 429) {
+        const { error, resetInSeconds } = await res.json(); // if backend provides resetInSeconds
+        toast.error(error);
+
+        setIsRateLimited(true);
+        setResetTimer(resetInSeconds || 60); // fallback to 60s
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Something went wrong");
+      }
+
       const data = await res.json();
 
       // Add AI response to conversation
@@ -110,6 +127,21 @@ export default function Home() {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (resetTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResetTimer((t) => t - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [resetTimer]);
+
+  useEffect(() => {
+    if (resetTimer === 0 && isRateLimited) {
+      setIsRateLimited(false);
+    }
+  }, [resetTimer, isRateLimited]);
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -306,14 +338,22 @@ export default function Home() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
+                placeholder={
+                  isRateLimited
+                    ? `Wait ${resetTimer}s to send`
+                    : "Type your message..."
+                }
                 rows={1}
                 className="w-full p-4 border border-[#b1ada1]/20 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-[#c15f3c]/20 focus:border-[#c15f3c]/30 transition-all duration-200 text-gray-800 placeholder-[#b1ada1]"
-                disabled={loading}
+                disabled={loading || isRateLimited}
                 style={{
                   minHeight: "56px",
                   maxHeight: "120px",
-                  overflowY: message.split("\n").length > 2 ? "auto" : "hidden",
+                  overflowY: message
+                    ? message.split("\n").length > 2
+                      ? "auto"
+                      : "hidden"
+                    : "hidden",
                 }}
               />
             </div>
