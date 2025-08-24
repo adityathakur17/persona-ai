@@ -1,4 +1,4 @@
-# Persona AI – Chat with Hitesh Choudhary or Piyush Garg  
+# Persona AI – Chat with your AI mentor 
 **Live Demo:** [https://persona-ai-adi.vercel.app/](https://persona-ai-adi.vercel.app/)  
 
 ## 📌 Overview  
@@ -30,7 +30,7 @@ This project is built with **Next.js**, **React**, and **Tailwind CSS**, and int
 
 ### 1️⃣ Clone the repository  
 ```bash
-git clone https://github.com/<your-username>/persona-ai.git
+git clone https://github.com/adityathakur17/persona-ai.git
 cd persona-ai
 npm install
 npm run dev
