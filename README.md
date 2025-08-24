@@ -44,7 +44,7 @@ npm run dev
 GEMINI_API_KEY=your_gemini_api_key_here
 ARCJET_KEY=your_arcjet_api_key_here
 ```
-###3️⃣ run the project
+### 3️⃣ run the project
 ```bash
 npm run dev
 ```
